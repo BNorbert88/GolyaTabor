@@ -7,7 +7,7 @@ import torchvision.models as models
 
 
 def run_classifier_imagenet():
-    input_image = Image.open(os.path.join(os.path.dirname(os.path.realpath(__file__)), '../dog.jpg'))
+    input_image = Image.open(os.path.join(os.path.dirname(os.path.realpath(__file__)), '../images/dog.jpg'))
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     # Define transformations to get a 224x224 image
