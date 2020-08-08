@@ -43,4 +43,4 @@ def run_classifier_imagenet(image):
 
 
 if __name__ == '__main__':
-    run_classifier_imagenet()
+    run_classifier_imagenet(image='csivi.jpg')
