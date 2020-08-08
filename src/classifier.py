@@ -1,3 +1,5 @@
+import os
+
 from PIL import Image
 import torch
 from torchvision import transforms
@@ -5,7 +7,7 @@ import torchvision.models as models
 
 
 def run_classifier_imagenet():
-    input_image = Image.open('../dog.jpg')
+    input_image = Image.open(os.path.join(os.path.dirname(os.path.realpath(__file__)), '../dog.jpg'))
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     # Define transformations to get a 224x224 image
@@ -21,12 +23,10 @@ def run_classifier_imagenet():
     # Put data to GPU
     input_batch.to(device)
 
-    with open("../image_classes.txt") as f:
+    with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "../image_classes.txt")) as f:
         labels = eval(f.read())
 
     resnet = models.resnet152(pretrained=True)
-    if device != 'cpu':
-        resnet.cuda()
     # Set evaluation mode for resnet
     resnet.eval()
     # Forward propagation
@@ -40,3 +40,7 @@ def run_classifier_imagenet():
     result = [(labels[index], percentage[index].item()) for index in [indices[0][idx].item() for idx in range(5)]]
 
     return result
+
+
+if __name__ == '__main__':
+    run_classifier_imagenet()
