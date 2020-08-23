@@ -8,7 +8,7 @@ from torchvision import datasets, transforms
 from torch import nn, optim
 
 
-def load_data(batch=64):
+def load_data(batch=256):
     transform = transforms.Compose([transforms.ToTensor(),
                                     transforms.Normalize((0.5,), (0.5,)),
                                     ])
@@ -55,23 +55,28 @@ def create_model():
                           nn.Linear(hidden_sizes[1], output_size),
                           nn.LogSoftmax(dim=1))
     print(model)
+    global device
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    model.to(device)
 
 
 def train_model():
     criterion = nn.NLLLoss()
     optimizer = optim.SGD(model.parameters(), lr=0.003, momentum=0.9)
     time0 = time()
-    epochs = 1
+    epochs = 10
+    model_t = model.train()
     for e in range(epochs):
         running_loss = 0
         for images, labels in trainloader:
+            images, labels = images.to(device), labels.to(device)
             # Flatten MNIST images into a 784 long vector
             images = images.view(images.shape[0], -1)
 
             # Training pass
             optimizer.zero_grad()
 
-            output = model(images)
+            output = model_t(images)
             loss = criterion(output, labels)
 
             # This is where the model learns by backpropagating
@@ -93,14 +98,15 @@ def show_missed_prediction():
     for images, labels in valloader:
         find = False
         for i in range(len(labels)):
+            images, labels = images.to(device), labels.to(device)
             img = images[i].view(1, 784)
             with torch.no_grad():
                 logps = model(img)
 
             ps = torch.exp(logps)
-            probab = list(ps.numpy()[0])
+            probab = list(ps.cpu().numpy()[0])
             pred_label = probab.index(max(probab))
-            true_label = labels.numpy()[i]
+            true_label = labels.cpu().numpy()[i]
             if true_label != pred_label:
                 wrong_image = img
                 wrong_true_label = int(true_label)
@@ -110,7 +116,7 @@ def show_missed_prediction():
         if find:
             break
 
-    plt.imshow(np.reshape(wrong_image, (28, 28)), cmap='gray_r')
+    plt.imshow(np.reshape(wrong_image.cpu().numpy(), (28, 28)), cmap='gray_r')
     plt.title('Prediction: %i\nTrue label: %i\n' % (int(wrong_pred_label), int(wrong_true_label)), fontsize=20,
               color='black')
     plt.show()
@@ -120,14 +126,15 @@ def print_accuracy():
     correct_count, all_count = 0, 0
     for images, labels in valloader:
         for i in range(len(labels)):
+            images, labels = images.to(device), labels.to(device)
             img = images[i].view(1, 784)
             with torch.no_grad():
                 logps = model(img)
 
             ps = torch.exp(logps)
-            probab = list(ps.numpy()[0])
+            probab = list(ps.cpu().numpy()[0])
             pred_label = probab.index(max(probab))
-            true_label = labels.numpy()[i]
+            true_label = labels.cpu().numpy()[i]
             if (true_label == pred_label):
                 correct_count += 1
             all_count += 1
@@ -136,7 +143,8 @@ def print_accuracy():
 
 
 def try_on_image(image):
-    transform = transforms.Compose([transforms.ToTensor(),
+    transform = transforms.Compose([transforms.Grayscale(num_output_channels=1),
+                                    transforms.ToTensor(),
                                     transforms.Normalize((0.5,), (0.5,)),
                                     ])
     input_image = Image.open(os.path.join(
@@ -144,16 +152,27 @@ def try_on_image(image):
         '../images/' + image)
     )
 
-    rgbimage = np.asarray(input_image)
-    gray_image = np.dot(rgbimage[..., :3], [0.2989, 0.5870, 0.1140])
-    gray_image = transform(gray_image)
+    gray_image = transform(input_image)
+    gray_image = gray_image.to(device)
+    gray_image = gray_image.view(1, 784)
 
     with torch.no_grad():
         logps = model(gray_image)
         ps = torch.exp(logps)
-        probab = list(ps.numpy()[0])
+        probab = list(ps.cpu().numpy()[0])
         pred_label = probab.index(max(probab))
 
-    plt.imshow(np.reshape(gray_image, (28, 28)), cmap='gray')
+    plt.imshow(np.reshape(gray_image.cpu().numpy(), (28, 28)), cmap='gray')
     plt.title('Prediction: %i\n' % int(pred_label), fontsize=20, color='black')
     plt.show()
+
+
+if __name__ == '__main__':
+    load_data()
+    show_examples_in_row()
+    show_examples_in_table()
+    create_model()
+    train_model()
+    print_accuracy()
+    show_missed_prediction()
+    try_on_image('number_seven_BN.jpg')
