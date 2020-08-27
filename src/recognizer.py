@@ -131,6 +131,8 @@ def show_missed_prediction():
 def print_accuracy():
     correct_count, all_count = 0, 0
     for images, labels in valloader:
+        if all_count >= 1000:
+            break
         for i in range(len(labels)):
             images, labels = images.to(device), labels.to(device)
             img = images[i].view(1, 784)
