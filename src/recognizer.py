@@ -61,34 +61,40 @@ def create_model():
 
 
 def train_model():
-    criterion = nn.NLLLoss()
-    optimizer = optim.SGD(model.parameters(), lr=0.003, momentum=0.9)
-    time0 = time()
-    epochs = 10
-    model_t = model.train()
-    for e in range(epochs):
-        running_loss = 0
-        for images, labels in trainloader:
-            images, labels = images.to(device), labels.to(device)
-            # Flatten MNIST images into a 784 long vector
-            images = images.view(images.shape[0], -1)
+    global model
+    if os.path.exists("models/character.model"):
+        model = torch.load("models/character.model")
+        model.eval()
+    else:
+        criterion = nn.NLLLoss()
+        optimizer = optim.SGD(model.parameters(), lr=0.003, momentum=0.9)
+        time0 = time()
+        epochs = 1
+        model_t = model.train()
+        for e in range(epochs):
+            running_loss = 0
+            for images, labels in trainloader:
+                images, labels = images.to(device), labels.to(device)
+                # Flatten MNIST images into a 784 long vector
+                images = images.view(images.shape[0], -1)
 
-            # Training pass
-            optimizer.zero_grad()
+                # Training pass
+                optimizer.zero_grad()
 
-            output = model_t(images)
-            loss = criterion(output, labels)
+                output = model_t(images)
+                loss = criterion(output, labels)
 
-            # This is where the model learns by backpropagating
-            loss.backward()
+                # This is where the model learns by backpropagating
+                loss.backward()
 
-            # And optimizes its weights here
-            optimizer.step()
+                # And optimizes its weights here
+                optimizer.step()
 
-            running_loss += loss.item()
-        else:
-            print("Epoch {}/{} - Training loss: {}".format(e+1, epochs, running_loss / len(trainloader)))
-    print("\nTraining Time (in minutes) =", (time() - time0) / 60)
+                running_loss += loss.item()
+            else:
+                print("Epoch {}/{} - Training loss: {}".format(e+1, epochs, running_loss / len(trainloader)))
+        print("\nTraining Time (in minutes) =", (time() - time0) / 60)
+        torch.save(model_t, "models/character.model")
 
 
 def show_missed_prediction():
