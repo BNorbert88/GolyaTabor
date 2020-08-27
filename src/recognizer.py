@@ -69,7 +69,7 @@ def train_model():
         criterion = nn.NLLLoss()
         optimizer = optim.SGD(model.parameters(), lr=0.003, momentum=0.9)
         time0 = time()
-        epochs = 1
+        epochs = 100
         model_t = model.train()
         for e in range(epochs):
             running_loss = 0
