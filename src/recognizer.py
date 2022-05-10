@@ -62,8 +62,12 @@ def create_model():
 
 def train_model():
     global model
-    if os.path.exists("models/character.model"):
-        model = torch.load("models/character.model")
+    model_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.realpath(__file__))),
+        "models/character.model"
+    )
+    if os.path.exists(model_path):
+        model = torch.load(model_path)
         model.eval()
     else:
         criterion = nn.NLLLoss()
